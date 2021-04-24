@@ -1,6 +1,6 @@
 import logging
 import pprint
-from collections import Counter
+from collections import Counter, OrderedDict
 from dataclasses import dataclass
 from operator import itemgetter
 
@@ -74,9 +74,13 @@ def trading_summary(parsed_feed_data):
             f"Number of valid quotes: {get_valid_quote_count(trading_day_data)}\n"
             f"Most active hour: {get_most_active_hour(trading_day_data)}\n"
             f"Most active symbol: {get_most_active_symbol(trading_day_data)}\n"
-            "Price Statistics:\n"
-            f"{get_price_statistics(trading_day_data)}"
         )
+
+        print("Price Statistics:")
+        for symbol, price_statistics in get_price_statistics(trading_day_data).items():
+            print(
+                f"{price_statistics['date']} {price_statistics['time']},{symbol},{price_statistics['high']},{price_statistics['low']}"
+            )
 
 
 def get_price_statistics(trading_day_data):
@@ -108,12 +112,9 @@ def get_price_statistics(trading_day_data):
                 "high": data["price"],
                 "low": data["price"],
             }
-    # TODO refactoring
-    price_statistics = []
-    for symbol in sorted(symbol_hist.keys()):
-        price_statistics.append(
-            f"{symbol_hist[symbol]['date']} {symbol_hist[symbol]['time']},{symbol},{symbol_hist[symbol]['high']},{symbol_hist[symbol]['low']}"
-        )
+    price_statistics = OrderedDict.fromkeys(sorted(symbol_hist.keys()))
+    for symbol, symbol_info in symbol_hist.items():
+        price_statistics[symbol] = symbol_info
     return price_statistics
 
 
@@ -153,8 +154,8 @@ def read_input(input):
 
     # helper
     data_format_start_end = dict()
-    for i in range(len(data_format_row)):
-        trading_day = data_format_row[i]["date"]
+    for i, data in enumerate(data_format_row):
+        trading_day = data["date"]
         if data_format_start_end.get(trading_day):
             data_format_start_end[trading_day]["end"] = i + 1
         else:
