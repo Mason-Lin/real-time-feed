@@ -92,28 +92,25 @@ def get_price_statistics(trading_day_data):
         iii. High: Maximum Price that occurred for that Symbol during the trading day.
         iv. Low: Minimum Price that occurred for that Symbol during the trading day
     """
-    symbol_hist = dict()
+    stat = dict()
     for data in trading_day_data:
-        if symbol_hist.get(data["symbol"]):
-            prev_time = symbol_hist[data["symbol"]]["time"]
-            symbol_hist[data["symbol"]]["time"] = (
-                data["time"] if data["time"] > prev_time else prev_time
-            )
-            symbol_hist[data["symbol"]]["high"] = max(
-                symbol_hist[data["symbol"]]["high"], data["price"]
-            )
-            symbol_hist[data["symbol"]]["low"] = min(
-                symbol_hist[data["symbol"]]["low"], data["price"]
-            )
+        symbol = data["symbol"]
+        if stat.get(symbol):
+            prev_data = stat[symbol]
+            prev_data["time"] = max(prev_data["time"], data["time"])
+            prev_data["high"] = max(prev_data["high"], data["price"])
+            prev_data["low"] = min(prev_data["low"], data["price"])
         else:
-            symbol_hist[data["symbol"]] = {
+            stat[symbol] = {
                 "date": data["date"],
                 "time": data["time"],
                 "high": data["price"],
                 "low": data["price"],
             }
-    price_statistics = OrderedDict.fromkeys(sorted(symbol_hist.keys()))
-    for symbol, symbol_info in symbol_hist.items():
+
+    # alphabetical order based on Symbol
+    price_statistics = OrderedDict.fromkeys(sorted(stat.keys()))
+    for symbol, symbol_info in stat.items():
         price_statistics[symbol] = symbol_info
     return price_statistics
 
@@ -134,7 +131,6 @@ def read_input(input):
     # TODO temp ignored first line, it's number of quotes like 8
     for line in input_lines[1:]:
         splited = line.split(",")
-        # TODO convert to datetime format? no need for now.
         date = splited[0]
         time = splited[1]
         symbol = splited[2].upper()
