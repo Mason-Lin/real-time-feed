@@ -1,6 +1,6 @@
 import logging
 import pprint
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass
 from operator import itemgetter
 
@@ -19,7 +19,6 @@ input = """8
 
 @dataclass
 class ParsedFeedData:
-    data_format_col: defaultdict = None
     data_format_row: list = None
     data_format_start_end: dict = None
 
@@ -65,7 +64,7 @@ def quiz_a(parsed_feed_data):
     occurs for more than one symbol, pick the first symbol (sorted
     alphabetically).
     """
-    for trading_day in sorted(set(parsed_feed_data.data_format_col["date"])):
+    for trading_day in sorted(parsed_feed_data.data_format_start_end.keys()):
         start = parsed_feed_data.data_format_start_end[trading_day]["start"]
         end = parsed_feed_data.data_format_start_end[trading_day]["end"]
         trading_day_data = parsed_feed_data.data_format_row[start:end]
@@ -76,9 +75,10 @@ def quiz_a(parsed_feed_data):
             f"Most active hour: {get_most_active_hour(trading_day_data)}\n"
             f"Most active symbol: {get_most_active_symbol(trading_day_data)}\n"
         )
+        quiz_b(parsed_feed_data, trading_day_data)
 
 
-def quiz_b(parsed_feed_data):
+def quiz_b(parsed_feed_data, trading_day_data):
     """Calculate and print the following data for each Symbol as a comma-delimiter string.
     Rows should be printed in alphabetical order based on Symbol
 
@@ -87,9 +87,32 @@ def quiz_b(parsed_feed_data):
         iii. High: Maximum Price that occurred for that Symbol during the trading day.
         iv. Low: Minimum Price that occurred for that Symbol during the trading day
     """
-    symbols = sorted(set(parsed_feed_data.data_format_col["symbol"]))
-    for each_symbol in symbols:
-        logging.debug(each_symbol)
+    symbol_hist = dict()
+    for data in trading_day_data:
+        if symbol_hist.get(data["symbol"]):
+            prev_time = symbol_hist[data["symbol"]]["time"]
+            symbol_hist[data["symbol"]]["time"] = (
+                data["time"] if data["time"] > prev_time else prev_time
+            )
+            symbol_hist[data["symbol"]]["high"] = max(
+                symbol_hist[data["symbol"]]["high"], data["price"]
+            )
+            symbol_hist[data["symbol"]]["low"] = min(
+                symbol_hist[data["symbol"]]["low"], data["price"]
+            )
+        else:
+            symbol_hist[data["symbol"]] = {
+                "date": data["date"],
+                "time": data["time"],
+                "high": data["price"],
+                "low": data["price"],
+            }
+    # TODO refactoring
+    for symbol in sorted(symbol_hist.keys()):
+        print(
+            f"{symbol_hist[symbol]['date']} {symbol_hist[symbol]['time']}"
+            f"{symbol},{symbol_hist[symbol]['high']},{symbol_hist[symbol]['low']}"
+        )
 
 
 def read_input(input):
@@ -104,7 +127,6 @@ def read_input(input):
             some kind of data sturuct
     """
     input_lines = input.splitlines()
-    data_format_col = defaultdict(list)
     data_format_row = list()
     # TODO temp ignored first line, it's number of quotes like 8
     for line in input_lines[1:]:
@@ -118,10 +140,6 @@ def read_input(input):
         if "09:30:00" > time or time > "16:30:00":
             continue
 
-        data_format_col["date"].append(date)
-        data_format_col["time"].append(time)
-        data_format_col["symbol"].append(symbol)
-        data_format_col["price"].append(price)
         data_format_row.append(
             {
                 "date": date,
@@ -142,21 +160,11 @@ def read_input(input):
 
     logging.debug(pprint.pformat(data_format_start_end))
     logging.debug(pprint.pformat(data_format_row))
-    logging.debug(pprint.pformat(data_format_col))
-    # maybe I can remove data_format_col, after finish quiz 2 and see.
-    parsed_feed_data = ParsedFeedData(
-        data_format_col, data_format_row, data_format_start_end
-    )
+    parsed_feed_data = ParsedFeedData(data_format_row, data_format_start_end)
     return parsed_feed_data
 
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
     parsed_feed_data = read_input(input)
-    assert parsed_feed_data.data_format_col["price"][3] == "845.61"
-    assert parsed_feed_data.data_format_row[2]["date"] == "2017-01-03"
-    assert parsed_feed_data.data_format_row[2]["time"] == "16:25:25"
-    assert parsed_feed_data.data_format_row[2]["symbol"] == "AAPL"
-    assert parsed_feed_data.data_format_row[2]["price"] == "141.64"
     quiz_a(parsed_feed_data)
-    quiz_b(parsed_feed_data)
