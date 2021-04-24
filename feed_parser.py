@@ -1,6 +1,7 @@
 import pprint
 import logging
 from collections import defaultdict, Counter
+from operator import itemgetter
 
 # FIXME think about really big inputs, using iterator
 input = """8
@@ -25,7 +26,8 @@ def get_most_active_hour(data_format_row, trading_day):
             cnt[hh] += 1
 
     # [0][0] means get hour from [('12', 3)]
-    return cnt.most_common(1)[0][0]
+    sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
+    return sorted_most_common[0][0]
 
 
 def get_most_active_symbol(data_format_row, trading_day):
@@ -36,7 +38,8 @@ def get_most_active_symbol(data_format_row, trading_day):
         if data_format_row[i]["date"] == trading_day:
             # TODO Should I consider case? will it be AAPL and aapl?
             cnt[data_format_row[i]["symbol"]] += 1
-    return cnt.most_common(1)[0][0]
+    sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
+    return sorted_most_common[0][0]
 
 
 def get_last_quote_time(data_format_row, trading_day):
@@ -69,7 +72,6 @@ def quiz_a(data_format_col, data_format_row):
     occurs for more than one symbol, pick the first symbol (sorted
     alphabetically).
     """
-    # TODO write some unit test for 4, 5
     for trading_day in sorted(set(data_format_col["date"])):
         logging.info("Trading Day: %s", trading_day)
         logging.info(
