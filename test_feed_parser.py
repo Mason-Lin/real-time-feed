@@ -14,8 +14,9 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "symbol": "AAPL"},
             {"date": "2017-01-03", "symbol": "FB"},
         ]
+        parsed_feed_data = feed_parser.ParsedFeedData(data_format_row=data_format_row)
         trading_day = "2017-01-03"
-        actual = feed_parser.get_most_active_symbol(data_format_row, trading_day)
+        actual = feed_parser.get_most_active_symbol(parsed_feed_data, trading_day)
         expected = "AAPL"
         assert actual == expected
 
@@ -28,8 +29,9 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "symbol": "AAPL"},
             {"date": "2017-01-03", "symbol": "AAPL"},
         ]
+        parsed_feed_data = feed_parser.ParsedFeedData(data_format_row=data_format_row)
         trading_day = "2017-01-03"
-        actual = feed_parser.get_most_active_symbol(data_format_row, trading_day)
+        actual = feed_parser.get_most_active_symbol(parsed_feed_data, trading_day)
         expected = "AAPL"
         assert actual == expected
 
@@ -42,8 +44,9 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "time": "16:28:50"},
             {"date": "2017-01-03", "time": "16:29:59"},
         ]
+        parsed_feed_data = feed_parser.ParsedFeedData(data_format_row=data_format_row)
         trading_day = "2017-01-03"
-        actual = feed_parser.get_most_active_hour(data_format_row, trading_day)
+        actual = feed_parser.get_most_active_hour(parsed_feed_data, trading_day)
         expected = "16"
         assert actual == expected
 
@@ -56,8 +59,9 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "time": "16:28:50"},
             {"date": "2017-01-03", "time": "16:29:59"},
         ]
+        parsed_feed_data = feed_parser.ParsedFeedData(data_format_row=data_format_row)
         trading_day = "2017-01-03"
-        actual = feed_parser.get_most_active_hour(data_format_row, trading_day)
+        actual = feed_parser.get_most_active_hour(parsed_feed_data, trading_day)
         expected = "12"
         assert actual == expected
 

@@ -1,6 +1,7 @@
 import logging
 import pprint
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from operator import itemgetter
 
 # FIXME think about really big inputs, using iterator
@@ -16,49 +17,52 @@ input = """8
 """
 
 
-def get_most_active_hour(data_format_row, trading_day):
-    cnt = Counter()
-    # FIXME create trading day slice from earlier step, like trading_day_data (include all tradings of the date only)
-    # it's very hard to test this function now.
-    for i in range(len(data_format_row)):
-        if data_format_row[i]["date"] == trading_day:
-            hh, mm, ss = data_format_row[i]["time"].split(":")
-            cnt[hh] += 1
+@dataclass
+class ParsedFeedData:
+    data_format_col: defaultdict = None
+    data_format_row: list = None
+    data_format_start_end: dict = None
 
-    # [0][0] means get hour from [('12', 3)]
+
+def get_most_active_hour(parsed_feed_data, trading_day):
+    cnt = Counter()
+    for i in range(len(parsed_feed_data.data_format_row)):
+        if parsed_feed_data.data_format_row[i]["date"] == trading_day:
+            # HH:MM:SS
+            hour = parsed_feed_data.data_format_row[i]["time"].split(":")[0]
+            cnt[hour] += 1
+
+    # [0][0] means get hour from [('12', 3), ('16', 3)]
     sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
     return sorted_most_common[0][0]
 
 
-def get_most_active_symbol(data_format_row, trading_day):
-    # TODO didn't handle two active symbol case
-    # AAPL 3 times, FB 3 times, should return AAPL
+def get_most_active_symbol(parsed_feed_data, trading_day):
     cnt = Counter()
-    for i in range(len(data_format_row)):
-        if data_format_row[i]["date"] == trading_day:
-            # TODO Should I consider case? will it be AAPL and aapl?
-            cnt[data_format_row[i]["symbol"]] += 1
+    for i in range(len(parsed_feed_data.data_format_row)):
+        if parsed_feed_data.data_format_row[i]["date"] == trading_day:
+            cnt[parsed_feed_data.data_format_row[i]["symbol"]] += 1
     sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
     return sorted_most_common[0][0]
 
 
-def get_last_quote_time(data_format_row, trading_day):
-    for i in range(len(data_format_row) - 1, 0, -1):
-        if data_format_row[i]["date"] == trading_day:
-            last_quote_time = data_format_row[i]["time"]
+def get_last_quote_time(parsed_feed_data, trading_day):
+    for i in range(len(parsed_feed_data.data_format_row) - 1, 0, -1):
+        if parsed_feed_data.data_format_row[i]["date"] == trading_day:
+            last_quote_time = parsed_feed_data.data_format_row[i]["time"]
             break
     return last_quote_time
 
 
-def get_valid_quote_count(data_format_row, trading_day):
+def get_valid_quote_count(parsed_feed_data, trading_day):
     valid_quote_count = 0
-    for i in range(len(data_format_row)):
-        if data_format_row[i]["date"] == trading_day:
+    for i in range(len(parsed_feed_data.data_format_row)):
+        if parsed_feed_data.data_format_row[i]["date"] == trading_day:
             valid_quote_count += 1
     return valid_quote_count
 
 
-def quiz_a(data_format_col, data_format_row):
+def quiz_a(parsed_feed_data):
     """After exchange closes at 16:30:00 for each trading day, print
 
     1. Trading Day = <Date>
@@ -72,25 +76,17 @@ def quiz_a(data_format_col, data_format_row):
     occurs for more than one symbol, pick the first symbol (sorted
     alphabetically).
     """
-    for trading_day in sorted(set(data_format_col["date"])):
-        logging.info("Trading Day: %s", trading_day)
-        logging.info(
-            "Last Quote Time: %s", get_last_quote_time(data_format_row, trading_day)
-        )
-        logging.info(
-            "Number of valid quotes: %s",
-            get_valid_quote_count(data_format_row, trading_day),
-        )
-        logging.info(
-            "Most active hour: %s", get_most_active_hour(data_format_row, trading_day)
-        )
-        logging.info(
-            "Most active symbol: %s",
-            get_most_active_symbol(data_format_row, trading_day),
+    for trading_day in sorted(set(parsed_feed_data.data_format_col["date"])):
+        print(
+            f"\n===Trading Day: {trading_day}===\n"
+            f"Last Quote Time: {get_last_quote_time(parsed_feed_data, trading_day)}\n"
+            f"Number of valid quotes: {get_valid_quote_count(parsed_feed_data, trading_day)}\n"
+            f"Most active hour: {get_most_active_hour(parsed_feed_data, trading_day)}\n"
+            f"Most active symbol: {get_most_active_symbol(parsed_feed_data, trading_day)}\n"
         )
 
 
-def quiz_b(data_format_col, data_format_row):
+def quiz_b(parsed_feed_data):
     """Calculate and print the following data for each Symbol as a comma-delimiter string.
     Rows should be printed in alphabetical order based on Symbol
 
@@ -99,7 +95,7 @@ def quiz_b(data_format_col, data_format_row):
         iii. High: Maximum Price that occurred for that Symbol during the trading day.
         iv. Low: Minimum Price that occurred for that Symbol during the trading day
     """
-    symbols = sorted(set(data_format_col["symbol"]))
+    symbols = sorted(set(parsed_feed_data.data_format_col["symbol"]))
     for each_symbol in symbols:
         logging.debug(each_symbol)
 
@@ -115,45 +111,59 @@ def read_input(input):
         Return:
             some kind of data sturuct
     """
-
     input_lines = input.splitlines()
-    count = input_lines[0]
-    data_format_1 = defaultdict(list)
-    data_format_2 = list()
+    data_format_col = defaultdict(list)
+    data_format_row = list()
+    # TODO temp ignored first line, it's number of quotes like 8
     for line in input_lines[1:]:
         splited = line.split(",")
+        # TODO convert to datetime format? no need for now.
+        date = splited[0]
         time = splited[1]
-        # TODO convert to datetime format?
+        symbol = splited[2].upper()
+        price = splited[3]
+
         if "09:30:00" > time or time > "16:30:00":
             continue
-        logging.debug(splited)
-        data_format_1["date"].append(splited[0])
-        data_format_1["time"].append(time)
-        data_format_1["symbol"].append(splited[2])
-        data_format_1["price"].append(splited[3])
-        data_format_2.append(
+
+        data_format_col["date"].append(date)
+        data_format_col["time"].append(time)
+        data_format_col["symbol"].append(symbol)
+        data_format_col["price"].append(price)
+        data_format_row.append(
             {
-                "date": splited[0],
+                "date": date,
                 "time": time,
-                "symbol": splited[2],
-                "price": splited[3],
+                "symbol": symbol,
+                "price": price,
             }
         )
-    pprint.pprint(data_format_1)
-    # logging.debug(data1)
-    logging.debug("=========================")
-    # logging.debug(data2)
-    pprint.pprint(data_format_2)
-    return data_format_1, data_format_2
+
+    # helper
+    data_format_start_end = dict()
+    for i in range(len(data_format_row)):
+        trading_day = data_format_row[i]["date"]
+        if data_format_start_end.get(trading_day):
+            data_format_start_end[trading_day]["end"] = i
+        else:
+            data_format_start_end[trading_day] = {"start": i, "end": i}
+
+    logging.debug(pprint.pformat(data_format_start_end))
+    logging.debug(pprint.pformat(data_format_row))
+    logging.debug(pprint.pformat(data_format_col))
+    parsed_feed_data = ParsedFeedData(
+        data_format_col, data_format_row, data_format_start_end
+    )
+    return parsed_feed_data
 
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
-    data_format_col, data_format_row = read_input(input)
-    assert data_format_col["price"][3] == "845.61"
-    assert data_format_row[2]["date"] == "2017-01-03"
-    # assert data_format_row[2]["time"] == "16:25:25"
-    assert data_format_row[2]["symbol"] == "AAPL"
-    assert data_format_row[2]["price"] == "141.64"
-    quiz_a(data_format_col, data_format_row)
-    quiz_b(data_format_col, data_format_row)
+    parsed_feed_data = read_input(input)
+    assert parsed_feed_data.data_format_col["price"][3] == "845.61"
+    assert parsed_feed_data.data_format_row[2]["date"] == "2017-01-03"
+    assert parsed_feed_data.data_format_row[2]["time"] == "16:25:25"
+    assert parsed_feed_data.data_format_row[2]["symbol"] == "AAPL"
+    assert parsed_feed_data.data_format_row[2]["price"] == "141.64"
+    quiz_a(parsed_feed_data)
+    quiz_b(parsed_feed_data)
