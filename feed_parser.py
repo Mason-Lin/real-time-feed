@@ -1,6 +1,6 @@
-import pprint
 import logging
-from collections import defaultdict, Counter
+import pprint
+from collections import Counter, defaultdict
 from operator import itemgetter
 
 # FIXME think about really big inputs, using iterator
