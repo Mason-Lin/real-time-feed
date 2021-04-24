@@ -1,4 +1,3 @@
-# TODO create test folder, pytest.ini, conftest.py if needed.
 import unittest
 
 import feed_parser
@@ -6,7 +5,7 @@ import feed_parser
 
 class TestParser(unittest.TestCase):
     def test_get_most_active_symbol_only_one(self):
-        data_format_row = [
+        trading_day_data = [
             {"date": "2017-01-03", "symbol": "AAPL"},
             {"date": "2017-01-03", "symbol": "AMD"},
             {"date": "2017-01-03", "symbol": "AAPL"},
@@ -14,14 +13,12 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "symbol": "AAPL"},
             {"date": "2017-01-03", "symbol": "FB"},
         ]
-        parsed_feed_data = feed_parser.ParsedFeedData(data_format_row=data_format_row)
-        trading_day = "2017-01-03"
-        actual = feed_parser.get_most_active_symbol(parsed_feed_data, trading_day)
+        actual = feed_parser.get_most_active_symbol(trading_day_data)
         expected = "AAPL"
         assert actual == expected
 
     def test_get_most_active_symbol_more_than_one(self):
-        data_format_row = [
+        trading_day_data = [
             {"date": "2017-01-03", "symbol": "FB"},
             {"date": "2017-01-03", "symbol": "FB"},
             {"date": "2017-01-03", "symbol": "AAPL"},
@@ -29,14 +26,12 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "symbol": "AAPL"},
             {"date": "2017-01-03", "symbol": "AAPL"},
         ]
-        parsed_feed_data = feed_parser.ParsedFeedData(data_format_row=data_format_row)
-        trading_day = "2017-01-03"
-        actual = feed_parser.get_most_active_symbol(parsed_feed_data, trading_day)
+        actual = feed_parser.get_most_active_symbol(trading_day_data)
         expected = "AAPL"
         assert actual == expected
 
     def test_get_most_active_hour_only_one(self):
-        data_format_row = [
+        trading_day_data = [
             {"date": "2017-01-03", "time": "16:18:50"},
             {"date": "2017-01-03", "time": "16:25:22"},
             {"date": "2017-01-03", "time": "16:25:25"},
@@ -44,14 +39,12 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "time": "16:28:50"},
             {"date": "2017-01-03", "time": "16:29:59"},
         ]
-        parsed_feed_data = feed_parser.ParsedFeedData(data_format_row=data_format_row)
-        trading_day = "2017-01-03"
-        actual = feed_parser.get_most_active_hour(parsed_feed_data, trading_day)
+        actual = feed_parser.get_most_active_hour(trading_day_data)
         expected = "16"
         assert actual == expected
 
     def test_get_most_active_hour_more_than_one(self):
-        data_format_row = [
+        trading_day_data = [
             {"date": "2017-01-03", "time": "12:18:50"},
             {"date": "2017-01-03", "time": "12:25:22"},
             {"date": "2017-01-03", "time": "14:25:25"},
@@ -59,9 +52,7 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "time": "16:28:50"},
             {"date": "2017-01-03", "time": "16:29:59"},
         ]
-        parsed_feed_data = feed_parser.ParsedFeedData(data_format_row=data_format_row)
-        trading_day = "2017-01-03"
-        actual = feed_parser.get_most_active_hour(parsed_feed_data, trading_day)
+        actual = feed_parser.get_most_active_hour(trading_day_data)
         expected = "12"
         assert actual == expected
 
