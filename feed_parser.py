@@ -50,7 +50,7 @@ def get_valid_quote_count(trading_day_data):
     return len(trading_day_data)
 
 
-def quiz_a(parsed_feed_data):
+def trading_summary(parsed_feed_data):
     """After exchange closes at 16:30:00 for each trading day, print
 
     1. Trading Day = <Date>
@@ -74,11 +74,12 @@ def quiz_a(parsed_feed_data):
             f"Number of valid quotes: {get_valid_quote_count(trading_day_data)}\n"
             f"Most active hour: {get_most_active_hour(trading_day_data)}\n"
             f"Most active symbol: {get_most_active_symbol(trading_day_data)}\n"
+            "Price Statistics:\n"
+            f"{get_price_statistics(trading_day_data)}"
         )
-        quiz_b(parsed_feed_data, trading_day_data)
 
 
-def quiz_b(parsed_feed_data, trading_day_data):
+def get_price_statistics(trading_day_data):
     """Calculate and print the following data for each Symbol as a comma-delimiter string.
     Rows should be printed in alphabetical order based on Symbol
 
@@ -108,11 +109,12 @@ def quiz_b(parsed_feed_data, trading_day_data):
                 "low": data["price"],
             }
     # TODO refactoring
+    price_statistics = []
     for symbol in sorted(symbol_hist.keys()):
-        print(
-            f"{symbol_hist[symbol]['date']} {symbol_hist[symbol]['time']}"
-            f"{symbol},{symbol_hist[symbol]['high']},{symbol_hist[symbol]['low']}"
+        price_statistics.append(
+            f"{symbol_hist[symbol]['date']} {symbol_hist[symbol]['time']},{symbol},{symbol_hist[symbol]['high']},{symbol_hist[symbol]['low']}"
         )
+    return price_statistics
 
 
 def read_input(input):
@@ -167,4 +169,4 @@ def read_input(input):
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
     parsed_feed_data = read_input(input)
-    quiz_a(parsed_feed_data)
+    trading_summary(parsed_feed_data)
