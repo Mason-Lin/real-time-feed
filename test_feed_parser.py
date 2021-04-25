@@ -13,7 +13,7 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "symbol": "AAPL"},
             {"date": "2017-01-03", "symbol": "FB"},
         ]
-        actual = feed_parser.get_most_active_symbol(trading_day_data)
+        actual = feed_parser._get_most_active_symbol(trading_day_data)
         expected = "AAPL"
         assert actual == expected
 
@@ -26,7 +26,7 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "symbol": "AAPL"},
             {"date": "2017-01-03", "symbol": "AAPL"},
         ]
-        actual = feed_parser.get_most_active_symbol(trading_day_data)
+        actual = feed_parser._get_most_active_symbol(trading_day_data)
         expected = "AAPL"
         assert actual == expected
 
@@ -39,7 +39,7 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "time": "16:28:50"},
             {"date": "2017-01-03", "time": "16:29:59"},
         ]
-        actual = feed_parser.get_most_active_hour(trading_day_data)
+        actual = feed_parser._get_most_active_hour(trading_day_data)
         expected = "16"
         assert actual == expected
 
@@ -52,7 +52,7 @@ class TestParser(unittest.TestCase):
             {"date": "2017-01-03", "time": "16:28:50"},
             {"date": "2017-01-03", "time": "16:29:59"},
         ]
-        actual = feed_parser.get_most_active_hour(trading_day_data)
+        actual = feed_parser._get_most_active_hour(trading_day_data)
         expected = "12"
         assert actual == expected
 

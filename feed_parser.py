@@ -23,7 +23,7 @@ class ParsedFeedData:
     data_format_start_end: dict = None
 
 
-def get_most_active_hour(trading_day_data):
+def _get_most_active_hour(trading_day_data):
     cnt = Counter()
     for data in trading_day_data:
         hour = data["time"].split(":")[0]  # HH:MM:SS
@@ -34,7 +34,7 @@ def get_most_active_hour(trading_day_data):
     return sorted_most_common[0][0]
 
 
-def get_most_active_symbol(trading_day_data):
+def _get_most_active_symbol(trading_day_data):
     cnt = Counter()
     for data in trading_day_data:
         cnt[data["symbol"]] += 1
@@ -42,48 +42,15 @@ def get_most_active_symbol(trading_day_data):
     return sorted_most_common[0][0]
 
 
-def get_last_quote_time(trading_day_data):
+def _get_last_quote_time(trading_day_data):
     return trading_day_data[-1]["time"]
 
 
-def get_valid_quote_count(trading_day_data):
+def _get_valid_quote_count(trading_day_data):
     return len(trading_day_data)
 
 
-def trading_summary(parsed_feed_data):
-    """After exchange closes at 16:30:00 for each trading day, print
-
-    1. Trading Day = <Date>
-    2. Last Quote Time = <Time of the last quote received before 16:30:00>
-    3. Number of valid quotes received for the day
-    4. Most active hour (maximum valid quotes per hour received during the
-    trading day). If the maximum number of valid quotes per hour occurs for
-    more than one hour, pick the earliest hour of the day.
-    5. Most active symbol (maximum valid quotes per symbol received during
-    the trading day).If the maximum number of valid quotes per symbol
-    occurs for more than one symbol, pick the first symbol (sorted
-    alphabetically).
-    """
-    for trading_day in sorted(parsed_feed_data.data_format_start_end.keys()):
-        start = parsed_feed_data.data_format_start_end[trading_day]["start"]
-        end = parsed_feed_data.data_format_start_end[trading_day]["end"]
-        trading_day_data = parsed_feed_data.data_format_row[start:end]
-        print(
-            f"\n===Trading Day: {trading_day}===\n"
-            f"Last Quote Time: {get_last_quote_time(trading_day_data)}\n"
-            f"Number of valid quotes: {get_valid_quote_count(trading_day_data)}\n"
-            f"Most active hour: {get_most_active_hour(trading_day_data)}\n"
-            f"Most active symbol: {get_most_active_symbol(trading_day_data)}\n"
-        )
-
-        print("Price Statistics:")
-        for symbol, price_statistics in get_price_statistics(trading_day_data).items():
-            print(
-                f"{price_statistics['date']} {price_statistics['time']},{symbol},{price_statistics['high']},{price_statistics['low']}"
-            )
-
-
-def get_price_statistics(trading_day_data):
+def _get_price_statistics(trading_day_data):
     """Calculate and print the following data for each Symbol as a comma-delimiter string.
     Rows should be printed in alphabetical order based on Symbol
 
@@ -113,6 +80,44 @@ def get_price_statistics(trading_day_data):
     for symbol, symbol_info in stat.items():
         price_statistics[symbol] = symbol_info
     return price_statistics
+
+
+#
+# Public API
+#
+
+
+def print_trading_summary(feed_data):
+    """After exchange closes at 16:30:00 for each trading day, print
+
+    1. Trading Day = <Date>
+    2. Last Quote Time = <Time of the last quote received before 16:30:00>
+    3. Number of valid quotes received for the day
+    4. Most active hour (maximum valid quotes per hour received during the
+    trading day). If the maximum number of valid quotes per hour occurs for
+    more than one hour, pick the earliest hour of the day.
+    5. Most active symbol (maximum valid quotes per symbol received during
+    the trading day).If the maximum number of valid quotes per symbol
+    occurs for more than one symbol, pick the first symbol (sorted
+    alphabetically).
+    """
+    for trading_day in sorted(feed_data.data_format_start_end.keys()):
+        start = feed_data.data_format_start_end[trading_day]["start"]
+        end = feed_data.data_format_start_end[trading_day]["end"]
+        trading_day_data = feed_data.data_format_row[start:end]
+        print(
+            f"\n===Trading Day: {trading_day}===\n"
+            f"Last Quote Time: {_get_last_quote_time(trading_day_data)}\n"
+            f"Number of valid quotes: {_get_valid_quote_count(trading_day_data)}\n"
+            f"Most active hour: {_get_most_active_hour(trading_day_data)}\n"
+            f"Most active symbol: {_get_most_active_symbol(trading_day_data)}\n"
+        )
+
+        print("Price Statistics:")
+        for symbol, price_statistics in _get_price_statistics(trading_day_data).items():
+            print(
+                f"{price_statistics['date']} {price_statistics['time']},{symbol},{price_statistics['high']},{price_statistics['low']}"
+            )
 
 
 def read_input(input):
@@ -159,11 +164,11 @@ def read_input(input):
 
     logging.debug(pprint.pformat(data_format_start_end))
     logging.debug(pprint.pformat(data_format_row))
-    parsed_feed_data = ParsedFeedData(data_format_row, data_format_start_end)
-    return parsed_feed_data
+    feed_data = ParsedFeedData(data_format_row, data_format_start_end)
+    return feed_data
 
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
     parsed_feed_data = read_input(input)
-    trading_summary(parsed_feed_data)
+    print_trading_summary(parsed_feed_data)
