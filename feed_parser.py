@@ -13,6 +13,7 @@ input = """8
 2017-01-04,16:29:32,AAPL,143.64
 2017-01-04,16:30:50,AAPL,141.64
 """
+Feed = namedtuple("Feed", ["date", "time", "symbol", "price"])
 
 
 class DailyFeed:
@@ -21,8 +22,6 @@ class DailyFeed:
     Input:
         StringIO
     """
-
-    Feed = namedtuple("Feed", ["date", "time", "symbol", "price"])
 
     def __init__(self, input):
         self._file = input
@@ -42,7 +41,7 @@ class DailyFeed:
             if not self._is_valid_trading(time):
                 continue
 
-            self._feed[date].append(self.Feed(date, time, symbol, price))
+            self._feed[date].append(Feed(date, time, symbol, price))
 
             if trading_day is None:
                 trading_day = date
