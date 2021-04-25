@@ -1,5 +1,5 @@
 import logging
-from collections import Counter, OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict, namedtuple
 from io import StringIO
 from operator import itemgetter
 
@@ -15,31 +15,34 @@ input = """8
 """
 
 
-class Feed:
+class DailyFeed:
     """The exchange starts trading daily at 09:30:00 hrsand closes at 16:30:00 hrsevery day
     Any quotes outside this time window are invalid and will be ignored.
     Input:
         StringIO
     """
 
+    Feed = namedtuple("Feed", ["date", "time", "symbol", "price"])
+
     def __init__(self, input):
         self._file = input
         self._feed = defaultdict(list)
         self.input_total_rows = next(self._file).strip()
 
+    @staticmethod
+    def _is_valid_trading(time):
+        return "09:30:00" < time < "16:30:00"
+
     def get_trading_day_feeds(self):
         trading_day = None
         # FIXME try read line use less memory
         for line in self._file.readlines():
-            splited = line.strip().split(",")
-            date = splited[0]
-            time = splited[1]
-            symbol = splited[2].upper()
-            price = splited[3]
+            date, time, symbol, price = self._extract_feed_from_line(line)
 
-            if "09:30:00" > time or time > "16:30:00":
+            if not self._is_valid_trading(time):
                 continue
 
+            # self.Feed(date, time, symbol, price))
             self._feed[date].append(
                 {
                     "date": date,
@@ -57,6 +60,15 @@ class Feed:
                 trading_day = date
 
         yield self._feed[trading_day]
+
+    @staticmethod
+    def _extract_feed_from_line(line):
+        splited = line.strip().split(",")
+        date = splited[0]
+        time = splited[1]
+        symbol = splited[2].upper()
+        price = splited[3]
+        return date, time, symbol, price
 
 
 def _get_most_active_hour(trading_day_feed):
@@ -155,4 +167,4 @@ def print_trading_summary(feed):
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
-    print_trading_summary(Feed(StringIO(input)))
+    print_trading_summary(DailyFeed(StringIO(input)))
