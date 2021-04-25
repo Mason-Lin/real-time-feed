@@ -1,10 +1,8 @@
 import logging
-import pprint
-from collections import Counter, OrderedDict
-from dataclasses import dataclass
+from collections import Counter, OrderedDict, defaultdict
+from io import StringIO
 from operator import itemgetter
 
-# FIXME think about really big inputs, using iterator
 input = """8
 2017-01-03,16:18:50,AAPL,142.64
 2017-01-03,16:25:22,AMD,13.86
@@ -17,16 +15,54 @@ input = """8
 """
 
 
-@dataclass
-class ParsedFeedData:
-    data_format_row: list = None
-    data_format_start_end: dict = None
+class Feed:
+    """The exchange starts trading daily at 09:30:00 hrsand closes at 16:30:00 hrsevery day
+    Any quotes outside this time window are invalid and will be ignored.
+    Input:
+        StringIO
+    """
+
+    def __init__(self, input):
+        self._file = input
+        self._feed = defaultdict(list)
+        self.input_total_rows = next(self._file).strip()
+
+    def get_trading_day_feeds(self):
+        trading_day = None
+        # FIXME try read line use less memory
+        for line in self._file.readlines():
+            splited = line.strip().split(",")
+            date = splited[0]
+            time = splited[1]
+            symbol = splited[2].upper()
+            price = splited[3]
+
+            if "09:30:00" > time or time > "16:30:00":
+                continue
+
+            self._feed[date].append(
+                {
+                    "date": date,
+                    "time": time,
+                    "symbol": symbol,
+                    "price": price,
+                }
+            )
+
+            if trading_day is None:
+                trading_day = date
+
+            if trading_day != date:
+                yield self._feed[trading_day]
+                trading_day = date
+
+        yield self._feed[trading_day]
 
 
-def _get_most_active_hour(trading_day_data):
+def _get_most_active_hour(trading_day_feed):
     cnt = Counter()
-    for data in trading_day_data:
-        hour = data["time"].split(":")[0]  # HH:MM:SS
+    for feed in trading_day_feed:
+        hour = feed["time"].split(":")[0]  # HH:MM:SS
         cnt[hour] += 1
 
     # [0][0] means get hour from [('12', 3), ('16', 3)]
@@ -34,23 +70,23 @@ def _get_most_active_hour(trading_day_data):
     return sorted_most_common[0][0]
 
 
-def _get_most_active_symbol(trading_day_data):
+def _get_most_active_symbol(trading_day_feed):
     cnt = Counter()
-    for data in trading_day_data:
-        cnt[data["symbol"]] += 1
+    for feed in trading_day_feed:
+        cnt[feed["symbol"]] += 1
     sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
     return sorted_most_common[0][0]
 
 
-def _get_last_quote_time(trading_day_data):
-    return trading_day_data[-1]["time"]
+def _get_last_quote_time(trading_day_feed):
+    return trading_day_feed[-1]["time"]
 
 
-def _get_valid_quote_count(trading_day_data):
-    return len(trading_day_data)
+def _get_valid_quote_count(trading_day_feed):
+    return len(trading_day_feed)
 
 
-def _get_price_statistics(trading_day_data):
+def _get_price_statistics(trading_day_feed):
     """Calculate and print the following data for each Symbol as a comma-delimiter string.
     Rows should be printed in alphabetical order based on Symbol
 
@@ -60,19 +96,19 @@ def _get_price_statistics(trading_day_data):
         iv. Low: Minimum Price that occurred for that Symbol during the trading day
     """
     stat = dict()
-    for data in trading_day_data:
-        symbol = data["symbol"]
+    for feed in trading_day_feed:
+        symbol = feed["symbol"]
         if stat.get(symbol):
-            prev_data = stat[symbol]
-            prev_data["time"] = max(prev_data["time"], data["time"])
-            prev_data["high"] = max(prev_data["high"], data["price"])
-            prev_data["low"] = min(prev_data["low"], data["price"])
+            prev_feed = stat[symbol]
+            prev_feed["time"] = max(prev_feed["time"], feed["time"])
+            prev_feed["high"] = max(prev_feed["high"], feed["price"])
+            prev_feed["low"] = min(prev_feed["low"], feed["price"])
         else:
             stat[symbol] = {
-                "date": data["date"],
-                "time": data["time"],
-                "high": data["price"],
-                "low": data["price"],
+                "date": feed["date"],
+                "time": feed["time"],
+                "high": feed["price"],
+                "low": feed["price"],
             }
 
     # alphabetical order based on Symbol
@@ -87,7 +123,7 @@ def _get_price_statistics(trading_day_data):
 #
 
 
-def print_trading_summary(feed_data):
+def print_trading_summary(feed):
     """After exchange closes at 16:30:00 for each trading day, print
 
     1. Trading Day = <Date>
@@ -101,74 +137,22 @@ def print_trading_summary(feed_data):
     occurs for more than one symbol, pick the first symbol (sorted
     alphabetically).
     """
-    for trading_day in sorted(feed_data.data_format_start_end.keys()):
-        start = feed_data.data_format_start_end[trading_day]["start"]
-        end = feed_data.data_format_start_end[trading_day]["end"]
-        trading_day_data = feed_data.data_format_row[start:end]
+    for trading_day_feed in feed.get_trading_day_feeds():
         print(
-            f"\n===Trading Day: {trading_day}===\n"
-            f"Last Quote Time: {_get_last_quote_time(trading_day_data)}\n"
-            f"Number of valid quotes: {_get_valid_quote_count(trading_day_data)}\n"
-            f"Most active hour: {_get_most_active_hour(trading_day_data)}\n"
-            f"Most active symbol: {_get_most_active_symbol(trading_day_data)}\n"
+            f"\n===Trading Day: {trading_day_feed[0]['date']}===\n"
+            f"Last Quote Time: {_get_last_quote_time(trading_day_feed)}\n"
+            f"Number of valid quotes: {_get_valid_quote_count(trading_day_feed)}\n"
+            f"Most active hour: {_get_most_active_hour(trading_day_feed)}\n"
+            f"Most active symbol: {_get_most_active_symbol(trading_day_feed)}\n"
         )
 
         print("Price Statistics:")
-        for symbol, price_statistics in _get_price_statistics(trading_day_data).items():
+        for symbol, price_statistics in _get_price_statistics(trading_day_feed).items():
             print(
                 f"{price_statistics['date']} {price_statistics['time']},{symbol},{price_statistics['high']},{price_statistics['low']}"
             )
 
 
-def read_input(input):
-    """The exchange starts trading daily at 09:30:00 hrsand closes at 16:30:00 hrsevery day
-    Any quotes outside this time window are invalid and will be ignored.
-        Input:
-            string like
-            8
-            2017-01-03,16:18:50,AAPL,142.64
-            2017-01-03,16:25:22,AMD,13.86
-        Return:
-            some kind of data sturuct
-    """
-    input_lines = input.splitlines()
-    data_format_row = list()
-    # TODO temp ignored first line, it's number of quotes like 8
-    for line in input_lines[1:]:
-        splited = line.split(",")
-        date = splited[0]
-        time = splited[1]
-        symbol = splited[2].upper()
-        price = splited[3]
-
-        if "09:30:00" > time or time > "16:30:00":
-            continue
-
-        data_format_row.append(
-            {
-                "date": date,
-                "time": time,
-                "symbol": symbol,
-                "price": price,
-            }
-        )
-
-    # helper
-    data_format_start_end = dict()
-    for i, data in enumerate(data_format_row):
-        trading_day = data["date"]
-        if data_format_start_end.get(trading_day):
-            data_format_start_end[trading_day]["end"] = i + 1
-        else:
-            data_format_start_end[trading_day] = {"start": i, "end": i + 1}
-
-    logging.debug(pprint.pformat(data_format_start_end))
-    logging.debug(pprint.pformat(data_format_row))
-    feed_data = ParsedFeedData(data_format_row, data_format_start_end)
-    return feed_data
-
-
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
-    parsed_feed_data = read_input(input)
-    print_trading_summary(parsed_feed_data)
+    print_trading_summary(Feed(StringIO(input)))
