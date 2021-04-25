@@ -69,20 +69,14 @@ class DailyFeed:
 
 
 def _get_most_active_hour(trading_day_feed):
-    cnt = Counter()
-    for feed in trading_day_feed:
-        hour = feed.time.split(":")[0]  # HH:MM:SS
-        cnt[hour] += 1
-
-    # [0][0] means get hour from [('12', 3), ('16', 3)]
+    cnt = Counter(feed.time.split(":")[0] for feed in trading_day_feed)  # HH:MM:SS
     sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
+    # [0][0] means get hour from [('12', 3), ('16', 3)]
     return sorted_most_common[0][0]
 
 
 def _get_most_active_symbol(trading_day_feed):
-    cnt = Counter()
-    for feed in trading_day_feed:
-        cnt[feed.symbol] += 1
+    cnt = Counter(feed.symbol for feed in trading_day_feed)
     sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
     return sorted_most_common[0][0]
 
