@@ -42,15 +42,7 @@ class DailyFeed:
             if not self._is_valid_trading(time):
                 continue
 
-            # self.Feed(date, time, symbol, price))
-            self._feed[date].append(
-                {
-                    "date": date,
-                    "time": time,
-                    "symbol": symbol,
-                    "price": price,
-                }
-            )
+            self._feed[date].append(self.Feed(date, time, symbol, price))
 
             if trading_day is None:
                 trading_day = date
@@ -74,7 +66,7 @@ class DailyFeed:
 def _get_most_active_hour(trading_day_feed):
     cnt = Counter()
     for feed in trading_day_feed:
-        hour = feed["time"].split(":")[0]  # HH:MM:SS
+        hour = feed.time.split(":")[0]  # HH:MM:SS
         cnt[hour] += 1
 
     # [0][0] means get hour from [('12', 3), ('16', 3)]
@@ -85,13 +77,13 @@ def _get_most_active_hour(trading_day_feed):
 def _get_most_active_symbol(trading_day_feed):
     cnt = Counter()
     for feed in trading_day_feed:
-        cnt[feed["symbol"]] += 1
+        cnt[feed.symbol] += 1
     sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
     return sorted_most_common[0][0]
 
 
 def _get_last_quote_time(trading_day_feed):
-    return trading_day_feed[-1]["time"]
+    return trading_day_feed[-1].time
 
 
 def _get_valid_quote_count(trading_day_feed):
@@ -109,18 +101,18 @@ def _get_price_statistics(trading_day_feed):
     """
     stat = dict()
     for feed in trading_day_feed:
-        symbol = feed["symbol"]
+        symbol = feed.symbol
         if stat.get(symbol):
             prev_feed = stat[symbol]
-            prev_feed["time"] = max(prev_feed["time"], feed["time"])
-            prev_feed["high"] = max(prev_feed["high"], feed["price"])
-            prev_feed["low"] = min(prev_feed["low"], feed["price"])
+            prev_feed["time"] = max(prev_feed["time"], feed.time)
+            prev_feed["high"] = max(prev_feed["high"], feed.price)
+            prev_feed["low"] = min(prev_feed["low"], feed.price)
         else:
             stat[symbol] = {
-                "date": feed["date"],
-                "time": feed["time"],
-                "high": feed["price"],
-                "low": feed["price"],
+                "date": feed.date,
+                "time": feed.time,
+                "high": feed.price,
+                "low": feed.price,
             }
 
     # alphabetical order based on Symbol
@@ -151,7 +143,7 @@ def print_trading_summary(feed):
     """
     for trading_day_feed in feed.get_trading_day_feeds():
         print(
-            f"\n===Trading Day: {trading_day_feed[0]['date']}===\n"
+            f"\n===Trading Day: {trading_day_feed[0].date}===\n"
             f"Last Quote Time: {_get_last_quote_time(trading_day_feed)}\n"
             f"Number of valid quotes: {_get_valid_quote_count(trading_day_feed)}\n"
             f"Most active hour: {_get_most_active_hour(trading_day_feed)}\n"
