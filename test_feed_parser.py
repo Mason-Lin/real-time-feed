@@ -59,14 +59,40 @@ class TestParser(unittest.TestCase):
 
     def test_get_price_statistics(self):
         trading_day_feed = [
-            Feed(date="2017-01-03", time="16:18:50", symbol="AAPL", price="142.64"),
-            Feed(date="2017-01-03", time="16:25:22", symbol="AMD", price="13.86"),
-            Feed(date="2017-01-03", time="16:25:25", symbol="AAPL", price="141.64"),
-            Feed(date="2017-01-03", time="16:25:28", symbol="AMZN", price="845.61"),
-            Feed(date="2017-01-03", time="16:28:50", symbol="AAPL", price="140.64"),
-            Feed(date="2017-01-03", time="16:29:59", symbol="FB", price="140.34"),
+            Feed(
+                date="2017-01-03",
+                time="16:18:50",
+                symbol="AAPL",
+                price="142.64",
+            ),
+            Feed(
+                date="2017-01-03", time="16:25:22", symbol="AMD", price="13.86"
+            ),
+            Feed(
+                date="2017-01-03",
+                time="16:25:25",
+                symbol="AAPL",
+                price="141.64",
+            ),
+            Feed(
+                date="2017-01-03",
+                time="16:25:28",
+                symbol="AMZN",
+                price="845.61",
+            ),
+            Feed(
+                date="2017-01-03",
+                time="16:28:50",
+                symbol="AAPL",
+                price="140.64",
+            ),
+            Feed(
+                date="2017-01-03", time="16:29:59", symbol="FB", price="140.34"
+            ),
         ]
-        actual_price_statistics = feed_parser._get_price_statistics(trading_day_feed)
+        actual_price_statistics = feed_parser._get_price_statistics(
+            trading_day_feed
+        )
         expected = {
             "AAPL": {
                 "date": "2017-01-03",
