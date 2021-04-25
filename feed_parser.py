@@ -1,5 +1,6 @@
 import logging
-from collections import Counter, OrderedDict, defaultdict, namedtuple
+from collections import Counter, OrderedDict, defaultdict
+from dataclasses import dataclass
 from io import StringIO
 from operator import itemgetter
 
@@ -13,7 +14,14 @@ input = """8
 2017-01-04,16:29:32,AAPL,143.64
 2017-01-04,16:30:50,AAPL,141.64
 """
-Feed = namedtuple("Feed", ["date", "time", "symbol", "price"])
+
+
+@dataclass
+class Feed:
+    date: str = None
+    time: str = None
+    symbol: str = None
+    price: str = None
 
 
 class DailyFeed:
