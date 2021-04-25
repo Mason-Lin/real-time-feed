@@ -65,16 +65,13 @@ class TestParser(unittest.TestCase):
             Feed(date="2017-01-03", time="16:25:28", symbol="AMZN", price="845.61"),
             Feed(date="2017-01-03", time="16:28:50", symbol="AAPL", price="140.64"),
             Feed(date="2017-01-03", time="16:29:59", symbol="FB", price="140.34"),
-            Feed(date="2017-01-04", time="16:29:32", symbol="AAPL", price="143.64"),
-            Feed(date="2017-01-04", time="16:30:50", symbol="AAPL", price="141.64"),
         ]
-
         actual_price_statistics = feed_parser._get_price_statistics(trading_day_data)
         expected = {
             "AAPL": {
                 "date": "2017-01-03",
-                "time": "16:30:50",
-                "high": "143.64",
+                "time": "16:28:50",
+                "high": "142.64",
                 "low": "140.64",
             },
             "AMD": {
