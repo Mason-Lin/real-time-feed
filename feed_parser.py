@@ -24,33 +24,13 @@ class DailyFeed:
     """
 
     def __init__(self, input):
-        self._file = input
-        self._feed = defaultdict(list)
-        self.input_total_rows = next(self._file).strip()
+        self._input_data = input
+        self._feeds = defaultdict(list)
+        self.input_total_rows = next(self._input_data).strip()
 
     @staticmethod
     def _is_valid_trading(time):
         return "09:30:00" < time < "16:30:00"
-
-    def get_trading_day_feeds(self):
-        trading_day = None
-        # FIXME try read line use less memory
-        for line in self._file.readlines():
-            date, time, symbol, price = self._extract_feed_from_line(line)
-
-            if not self._is_valid_trading(time):
-                continue
-
-            self._feed[date].append(Feed(date, time, symbol, price))
-
-            if trading_day is None:
-                trading_day = date
-
-            if trading_day != date:
-                yield self._feed[trading_day]
-                trading_day = date
-
-        yield self._feed[trading_day]
 
     @staticmethod
     def _extract_feed_from_line(line):
@@ -59,7 +39,25 @@ class DailyFeed:
         time = splited[1]
         symbol = splited[2].upper()
         price = splited[3]
-        return date, time, symbol, price
+        return Feed(date, time, symbol, price)
+
+    def get_trading_day_feeds(self):
+        trading_day_feeds = None
+        for _ in range(int(self.input_total_rows)):
+            feed = self._extract_feed_from_line(self._input_data.readline())
+
+            if not self._is_valid_trading(feed.time):
+                continue
+
+            self._feeds[feed.date].append(feed)
+
+            if trading_day_feeds and trading_day_feeds[0].date != feed.date:
+                yield trading_day_feeds
+
+            trading_day_feeds = self._feeds[feed.date]
+        else:
+            # last trading day
+            yield trading_day_feeds
 
 
 def _get_most_active_hour(trading_day_feed):
