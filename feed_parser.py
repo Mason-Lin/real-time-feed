@@ -1,3 +1,4 @@
+import datetime as dt
 import logging
 from collections import Counter, OrderedDict, defaultdict
 from dataclasses import dataclass
@@ -18,10 +19,10 @@ input = """8
 
 @dataclass
 class Feed:
-    date: str = None
-    time: str = None
+    date: dt.date = None
+    time: dt.time = None
     symbol: str = None
-    price: str = None
+    price: float = None
 
 
 class DailyFeed:
@@ -38,15 +39,15 @@ class DailyFeed:
 
     @staticmethod
     def _is_valid_trading(time):
-        return "09:30:00" < time < "16:30:00"
+        return dt.time(hour=9, minute=30) < time < dt.time(hour=16, minute=30)
 
     @staticmethod
     def _extract_feed_from_line(line):
         splited = line.strip().split(",")
-        date = splited[0]
-        time = splited[1]
+        date = dt.date.fromisoformat(splited[0])
+        time = dt.time.fromisoformat(splited[1])
         symbol = splited[2].upper()
-        price = splited[3]
+        price = float(splited[3])
         return Feed(date, time, symbol, price)
 
     def get_trading_day_feeds(self):
@@ -69,9 +70,7 @@ class DailyFeed:
 
 
 def _get_most_active_hour(trading_day_feed):
-    cnt = Counter(
-        feed.time.split(":")[0] for feed in trading_day_feed
-    )  # HH:MM:SS
+    cnt = Counter(feed.time.hour for feed in trading_day_feed)
     sorted_most_common = sorted(cnt.most_common(), key=itemgetter(0))
     # [0][0] means get hour from [('12', 3), ('16', 3)]
     return sorted_most_common[0][0]
